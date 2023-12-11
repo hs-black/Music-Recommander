@@ -4,6 +4,15 @@ from pprint import pformat
 import traceback
 from types import GenericAlias
 from typing import get_origin, Annotated
+import requests
+import json
+
+from typing import List
+from ChatGLM3 import ChatGLM3
+
+from langchain.agents import load_tools
+from langchain.agents import initialize_agent
+from langchain.agents import AgentType
 
 _TOOL_HOOKS = {}
 _TOOL_DESCRIPTIONS = {}
@@ -103,6 +112,64 @@ def get_weather(
         ret = "Error encountered while fetching weather data!\n" + traceback.format_exc() 
 
     return str(ret)
+
+
+
+@register_tool
+def Music_Recommender(
+    music_number: Annotated[int, '推荐数量（阿拉伯数字）', True] = 8,
+    music_name: Annotated[str, '歌曲名（海阔天空，同桌的你等）', False] = None,
+    artist_name: Annotated[str, '歌手名（周杰伦，刘若英等）', False]= None,
+    language: Annotated[str, '歌曲语种（粤语，英语，德语，华语等）', False]= None,
+    genre: Annotated[str, '歌曲风格（流行，摇滚，R&B，布鲁斯，电子等）', False]= None,
+    scene: Annotated[str, '歌曲适用场景（清晨，夜晚，运动，学习，工作等）', False]= None,
+    motion: Annotated[str, '歌曲情感（怀旧，浪漫，放松，伤感，快乐等）', False]= None,
+    music_instrument: Annotated[str, '歌曲主要乐器（钢琴，大提琴，小提琴，吉他等）', False]= None,
+    other: Annotated[str, '其他关键词（某榜单，某综艺，某游戏，某电影等）', False]= None,
+) -> str:
+    """
+    Useful for recommending a list of musics that meets the user's needs。
+    """
+    art = 'ar'
+    if music_name or artist_name:
+        para = ""
+        if music_name:
+            para += music_name + " "
+        if artist_name:
+            para += artist_name
+        r = requests.get(r"http://localhost:3000/search?keywords=" + para)
+        songs = r.json()['result']['songs']
+        art = 'artists'
+    else:
+        para = ""
+        if language:
+            para += language + " "
+        if genre:
+            para += genre + " "
+        if scene:
+            para += scene + " "
+        if motion:
+            para += motion + " "
+        if music_instrument:
+            para += music_instrument + " "
+        if other:
+            para += other + " "
+        r = requests.get(r"http://localhost:3000/search?keywords=" + para + r"&type=1000")
+        playlists = r.json()['result']['playlists']
+        r = requests.get(r"http://localhost:3000/playlist/track/all?id=" + str(playlists[0]['id']) + "&limit=50&offset=1")
+        songs = r.json()['songs']
+    result = ""
+    for song in songs[:min(len(songs),2*music_number)]:
+        result += song["name"] + "  歌手：" + ",".join([artist['name'] for artist in song[art]]) + r"  歌曲链接：https://music.163.com/#/song?id=" + str(song['id']) + '\n'
+    print (result)
+    
+
+    # calculator: 单个工具调用示例 3
+    llm = OpenAI(temperature=0)  
+    tools = load_tools(["ddg-search"], llm=llm) 
+    agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True) 
+    agent.run("南昌明天多少度? 这个数的0.23次方是多少？我需要中文的输出结果")
+    return result
 
 if __name__ == "__main__":
     print(dispatch_tool("get_weather", {"city_name": "beijing"}))

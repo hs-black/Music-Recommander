@@ -9,24 +9,12 @@ from client import get_client
 from conversation import postprocess_text, preprocess_text, Conversation, Role
 from tool_registry import dispatch_tool, get_tools
 
+import requests
+import json
+
+
 MAX_LENGTH = 8192
 TRUNCATE_LENGTH = 1024
-
-EXAMPLE_TOOL = {
-    "name": "get_current_weather",
-    "description": "Get the current weather in a given location",
-    "parameters": {
-        "type": "object",
-        "properties": {
-            "location": {
-                "type": "string",
-                "description": "The city and state, e.g. San Francisco, CA",
-            },
-            "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
-        },
-        "required": ["location"],
-    }
-}
 
 client = get_client()
 
@@ -58,23 +46,8 @@ def append_conversation(
     conversation.show(placeholder)
 
 def main(top_p: float, temperature: float, prompt_text: str):
-    manual_mode = st.toggle('Manual mode',
-        help='Define your tools in YAML format. You need to supply tool call results manually.'
-    )
-
-    if manual_mode:
-        with st.expander('Tools'):
-            tools = st.text_area(
-                'Define your tools in YAML format here:',
-                yaml.safe_dump([EXAMPLE_TOOL], sort_keys=False),
-                height=400,
-            )
-        tools = yaml_to_dict(tools)
-
-        if not tools:
-            st.error('YAML format error in tools definition')
-    else:
-        tools = get_tools()
+    
+    tools = get_tools()
 
     if 'tool_history' not in st.session_state:
         st.session_state.tool_history = []
@@ -161,23 +134,19 @@ def main(top_p: float, temperature: float, prompt_text: str):
                             
                             output_text = ''
                             
-                            if manual_mode:
-                                st.info('Please provide tool call results below:')
-                                return
-                            else:
-                                with markdown_placeholder:
-                                    with st.spinner(f'Calling tool {tool}...'):
-                                        observation = dispatch_tool(tool, args)
+                            with markdown_placeholder:
+                                with st.spinner(f'Calling tool {tool}...'):
+                                    observation = dispatch_tool(tool, args)
 
-                                if len(observation) > TRUNCATE_LENGTH:
-                                    observation = observation[:TRUNCATE_LENGTH] + ' [TRUNCATED]'
-                                append_conversation(Conversation(
-                                    Role.OBSERVATION, observation
-                                ), history, markdown_placeholder)
-                                message_placeholder = placeholder.chat_message(name="assistant", avatar="assistant")
-                                markdown_placeholder = message_placeholder.empty()
-                                st.session_state.calling_tool = False
-                                break
+                            if len(observation) > TRUNCATE_LENGTH:
+                                observation = observation[:TRUNCATE_LENGTH] + ' [TRUNCATED]'
+                            append_conversation(Conversation(
+                                Role.OBSERVATION, observation
+                            ), history, markdown_placeholder)
+                            message_placeholder = placeholder.chat_message(name="assistant", avatar="assistant")
+                            markdown_placeholder = message_placeholder.empty()
+                            st.session_state.calling_tool = False
+                            break
                         case _:
                             st.error(f'Unexpected special token: {token.text.strip()}')
                             return

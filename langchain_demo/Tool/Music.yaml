@@ -1,0 +1,10 @@
+name: Music
+description: Useful for recommending a list of musics that meets the user's needs
+parameters:
+  type: object
+  properties:
+    keywords:
+      type: string
+      description: 有且仅有两个关键词，用空格分隔。关键词如音乐的风格（古典，流行，摇滚等）,音乐的情感（轻松，悲伤，快乐等）,音乐的主要乐器（吉他，小提琴，大提琴等）,来源（中国好声音），作者（周杰伦），年代（80年代）等.
+  required:
+    - keywords

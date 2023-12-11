@@ -10,3 +10,5 @@ torch
 transformers
 pyyaml
 requests
+duckduckgo-search
+openai
