@@ -8,3 +8,4 @@ ToolAlpaca/
 AdvertiseGen/
 *.gz
 *.idea
+.ipynb_checkpoints/
