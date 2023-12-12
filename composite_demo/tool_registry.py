@@ -8,11 +8,12 @@ import requests
 import json
 
 from typing import List
-from ChatGLM3 import ChatGLM3
+from duckduckgo_search import ddg
+# from ChatGLM3 import ChatGLM3
 
-from langchain.agents import load_tools
-from langchain.agents import initialize_agent
-from langchain.agents import AgentType
+# from langchain.agents import load_tools
+# from langchain.agents import initialize_agent
+# from langchain.agents import AgentType
 
 _TOOL_HOOKS = {}
 _TOOL_DESCRIPTIONS = {}
@@ -68,53 +69,6 @@ def get_tools() -> dict:
     return deepcopy(_TOOL_DESCRIPTIONS)
 
 # Tool Definitions
-
-@register_tool
-def random_number_generator(
-    seed: Annotated[int, 'The random seed used by the generator', True], 
-    range: Annotated[tuple[int, int], 'The range of the generated numbers', True],
-) -> int:
-    """
-    Generates a random number x, s.t. range[0] <= x < range[1]
-    """
-    if not isinstance(seed, int):
-        raise TypeError("Seed must be an integer")
-    if not isinstance(range, tuple):
-        raise TypeError("Range must be a tuple")
-    if not isinstance(range[0], int) or not isinstance(range[1], int):
-        raise TypeError("Range must be a tuple of integers")
-
-    import random
-    return random.Random(seed).randint(*range)
-
-@register_tool
-def get_weather(
-    city_name: Annotated[str, 'The name of the city to be queried', True],
-) -> str:
-    """
-    Get the current weather for `city_name`
-    """
-
-    if not isinstance(city_name, str):
-        raise TypeError("City name must be a string")
-
-    key_selection = {
-        "current_condition": ["temp_C", "FeelsLikeC", "humidity", "weatherDesc",  "observation_time"],
-    }
-    import requests
-    try:
-        resp = requests.get(f"https://wttr.in/{city_name}?format=j1")
-        resp.raise_for_status()
-        resp = resp.json()
-        ret = {k: {_v: resp[k][0][_v] for _v in v} for k, v in key_selection.items()}
-    except:
-        import traceback
-        ret = "Error encountered while fetching weather data!\n" + traceback.format_exc() 
-
-    return str(ret)
-
-
-
 @register_tool
 def Music_Recommender(
     music_number: Annotated[int, '推荐数量（阿拉伯数字）', True] = 8,
@@ -162,15 +116,24 @@ def Music_Recommender(
     for song in songs[:min(len(songs),2*music_number)]:
         result += song["name"] + "  歌手：" + ",".join([artist['name'] for artist in song[art]]) + r"  歌曲链接：https://music.163.com/#/song?id=" + str(song['id']) + '\n'
     print (result)
-    
-
-    # calculator: 单个工具调用示例 3
-    # llm = OpenAI(temperature=0)  
-    # tools = load_tools(["ddg-search"], llm=llm) 
-    # agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True) 
-    # agent.run("南昌明天多少度? 这个数的0.23次方是多少？我需要中文的输出结果")
     return result
 
+@register_tool
+def duckduckgo_search(
+    keywords: Annotated[str, '检索关键词', True] = None,
+) -> str:
+    """
+    Use a search engine duckduckgo to search information
+    """
+    if not isinstance(keywords, str):
+        raise TypeError("Keywords must be a string")
+    try:
+        ret = ddg(keywords, safesearch='Off', max_results=200)
+    except:
+        import traceback
+        ret = "Error encountered while searching on duckduckgo\n" + traceback.format_exc()
+    return str(ret)
+
 if __name__ == "__main__":
-    print(dispatch_tool("get_weather", {"city_name": "beijing"}))
+    print(dispatch_tool("Music_Recommender", {"language": "粤语"}))
     print(get_tools())
