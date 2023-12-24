@@ -4,6 +4,11 @@ import requests
 import streamlit as st
 from streamlit.delta_generator import DeltaGenerator
 
+proxies = {
+  "http": None,
+  "https": None,
+}
+
 from conversation import Conversation, Role
 from tool_registry import tools, Music_Recommender, client
 
@@ -13,10 +18,10 @@ TRUNCATE_LENGTH = 1024
 def MusicPlay(MusicName, ArtistName):
     print(MusicName, ArtistName)
     
-    r = requests.get(f"http://localhost:3000/search?keywords={MusicName} {ArtistName}")
+    r = requests.get(f"http://localhost:3000/search?keywords={MusicName} {ArtistName}", proxies = proxies)
     tid = r.json()['result']['songs'][0]['id']
     print (tid)
-    r = requests.get(f"http://localhost:3000/song/url/v1?id={tid}&level=exhigh")
+    r = requests.get(f"http://localhost:3000/song/url/v1?id={tid}&level=exhigh", proxies = proxies)
     url = r.json()['data'][0]['url']
     print (url)
     return url
@@ -67,7 +72,7 @@ def main(top_p: float, temperature: float, choose, prompt_text: str):
         response_message = response.choices[0].message
         tool_calls = response_message.tool_calls
         # Step 2: check if the model wanted to call a function
-
+        PlayAudio = None
         if tool_calls:
             
             with markdown_placeholder:
@@ -112,6 +117,7 @@ def main(top_p: float, temperature: float, choose, prompt_text: str):
                             temperature=temperature,
                             top_p=top_p
                         ).choices[0].message
+                    
                     PlayAudio = client.chat.completions.create(
                             model="gpt-3.5-turbo-1106",
                             messages=[
@@ -136,7 +142,10 @@ def main(top_p: float, temperature: float, choose, prompt_text: str):
                                 Role.ASSISTANT,
                                 response_message.content,
                             ), history, markdown_placeholder)
-        tool_calls = PlayAudio.tool_calls
+        
+        if PlayAudio:
+            tool_calls = PlayAudio.tool_calls
+        
         if tool_calls:
             for tool_call in tool_calls:
                 function_name = tool_call.function.name

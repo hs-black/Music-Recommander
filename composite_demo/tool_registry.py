@@ -3,7 +3,12 @@ from openai import OpenAI
 from langchain.utilities import BingSearchAPIWrapper
 import requests
 
-os.environ["OPENAI_API_KEY"] = "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"
+proxies = {
+  "http": None,
+  "https": None,
+}
+
+os.environ["OPENAI_API_KEY"] = "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"
 os.environ["BING_SUBSCRIPTION_KEY"] = "a24d675d518c4e0a9707ab9d34d75ea2"
 os.environ["BING_SEARCH_URL"] = "https://api.bing.microsoft.com/v7.0/search"
 client = OpenAI()
@@ -89,7 +94,7 @@ tools = [
 
 def getInfo(tid: int) -> str :
     result = ""
-    r = requests.get(f"http://localhost:3000/song/wiki/summary?id={tid}").json()
+    r = requests.get(f"http://localhost:3000/song/wiki/summary?id={tid}",proxies = proxies).json()
     print (tid, f"http://localhost:3000/song/wiki/summary?id={tid}")
     blocks = r['data']['blocks'][1]['creatives']
     for label in blocks:
@@ -149,7 +154,10 @@ def Music_Recommender(
             para += music_name + " "
         if artist_name:
             para += artist_name
-        r = requests.get(r"http://localhost:3000/search?keywords=" + para)
+        r = requests.get(r"http://localhost:3000/search?keywords=" + para, proxies = proxies)
+        print("para", para)
+        print("TESTTT", r)
+
         songs += r.json()['result']['songs']
         art = 'artists'   
     else:
@@ -168,17 +176,17 @@ def Music_Recommender(
             para += other + " "
         if para:
             import random
-            r = requests.get(r"http://localhost:3000/search?keywords=" + para + r"&type=1000")
+            r = requests.get(r"http://localhost:3000/search?keywords=" + para + r"&type=1000", proxies = proxies)
             playlists = r.json()['result']['playlists']
             tmpsongs = []
-            r = requests.get(r"http://localhost:3000/playlist/track/all?id=" + str(playlists[0]['id']) + "&limit=8&offset=1")
+            r = requests.get(r"http://localhost:3000/playlist/track/all?id=" + str(playlists[0]['id']) + "&limit=8&offset=1", proxies = proxies)
             print (playlists[0]['name'])
             print (playlists[1]['name'])
             print (playlists[2]['name'])
             tmpsongs += r.json()['songs']
-            r = requests.get(r"http://localhost:3000/playlist/track/all?id=" + str(playlists[1]['id']) + "&limit=3&offset=1")
+            r = requests.get(r"http://localhost:3000/playlist/track/all?id=" + str(playlists[1]['id']) + "&limit=3&offset=1", proxies = proxies)
             tmpsongs += r.json()['songs']
-            r = requests.get(r"http://localhost:3000/playlist/track/all?id=" + str(playlists[2]['id']) + "&limit=2&offset=1")
+            r = requests.get(r"http://localhost:3000/playlist/track/all?id=" + str(playlists[2]['id']) + "&limit=2&offset=1", proxies = proxies)
             tmpsongs += r.json()['songs']
             random.shuffle(tmpsongs)
             songs += tmpsongs
