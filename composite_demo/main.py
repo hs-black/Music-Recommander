@@ -18,7 +18,7 @@ with st.sidebar:
         'temperature', 0.0, 1.5, 0.95, step=0.01
     )
 
-st.title("ChatGLM3 Music Recommander")
+st.title("ChatGLM3 Music Recommender")
 
 prompt_text = st.chat_input(
     'Get music recommendation with ChatGLM3!',

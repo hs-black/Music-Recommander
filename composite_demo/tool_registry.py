@@ -1,90 +1,106 @@
-from copy import deepcopy
-import inspect
-from pprint import pformat
-import traceback
-from types import GenericAlias
-from typing import get_origin, Annotated
+import os, json
+from openai import OpenAI
+from langchain.utilities import BingSearchAPIWrapper
 import requests
-import json
 
-from typing import List
-from duckduckgo_search import ddg
-# from ChatGLM3 import ChatGLM3
+os.environ["OPENAI_API_KEY"] = "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"
+os.environ["BING_SUBSCRIPTION_KEY"] = "a24d675d518c4e0a9707ab9d34d75ea2"
+os.environ["BING_SEARCH_URL"] = "https://api.bing.microsoft.com/v7.0/search"
+client = OpenAI()
 
-# from langchain.agents import load_tools
-# from langchain.agents import initialize_agent
-# from langchain.agents import AgentType
+tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "Music_Recommender",
+                "description": "Useful for recommending a list of musics that meets the user's needs",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "music_number": {
+                            "type": "number",
+                            "description": "推荐数量（阿拉伯数字）",
+                        },
+                        "music_name": {
+                            "type": "string",
+                            "description": "歌曲名（海阔天空，同桌的你等）",
+                        },
+                        "artist_name": {
+                            "type": "string",
+                            "description": "歌手名（周杰伦，刘若英等）",
+                        },
+                        "language": {
+                            "type": "string",
+                            "description": "歌曲语种（粤语，英语，德语，华语等）",
+                        },
+                        "genre": {
+                            "type": "string",
+                            "description": "歌曲风格（流行，摇滚，R&B，布鲁斯，电子等）",
+                        },
+                        "scene": {
+                            "type": "string",
+                            "description": "歌曲适用场景（清晨，夜晚，运动，学习，工作等）",
+                        },
+                        "motion": {
+                            "type": "string",
+                            "description": "歌曲情感（怀旧，浪漫，放松，伤感，快乐等）",
+                        },
+                        "music_instrument": {
+                            "type": "string",
+                            "description": "歌曲主要乐器（钢琴，大提琴，小提琴，吉他等）",
+                        },
+                        "query": {
+                            "type": "string",
+                            "description": "需要搜索的信息，直接从网络搜索这个文本，比如'鸡你太美是什么歌?','歌词包含就这样被你征服，是什么歌'",
+                        },
+                        "other": {
+                            "type": "string",
+                            "description": "其他关键词（某榜单，某综艺，某游戏，某电影等）",
+                        },
+                    },
+                    "required": ["music_number", "query"],
+                },
+            },
+        }
 
-_TOOL_HOOKS = {}
-_TOOL_DESCRIPTIONS = {}
+        # {
+        #     "type": "function",
+        #     "function": {
+        #         "name": "Online_Music_Searcher",
+        #         "description": "从网络上获取信息，直接搜索给定的信息",
+        #         "parameters": {
+        #             "type": "object",
+        #             "properties": {
+        #                 "Search_text": {
+        #                     "type": "string",
+        #                     "description": "需要搜索的信息，直接从网络搜索这个文本，比如“鸡你太美是什么歌？”，“歌词包含“就这样被你征服”，那英的，是什么歌”",
+        #                 },
+        #             },
+        #             "required": [],
+        #         },
+        #     },
+        # }
+    ]
 
-def register_tool(func: callable):
-    tool_name = func.__name__
-    tool_description = inspect.getdoc(func).strip()
-    python_params = inspect.signature(func).parameters
-    tool_params = []
-    for name, param in python_params.items():
-        annotation = param.annotation
-        if annotation is inspect.Parameter.empty:
-            raise TypeError(f"Parameter `{name}` missing type annotation")
-        if get_origin(annotation) != Annotated:
-            raise TypeError(f"Annotation type for `{name}` must be typing.Annotated")
-        
-        typ, (description, required) = annotation.__origin__, annotation.__metadata__
-        typ: str = str(typ) if isinstance(typ, GenericAlias) else typ.__name__
-        if not isinstance(description, str):
-            raise TypeError(f"Description for `{name}` must be a string")
-        if not isinstance(required, bool):
-            raise TypeError(f"Required for `{name}` must be a bool")
 
-        tool_params.append({
-            "name": name,
-            "description": description,
-            "type": typ,
-            "required": required
-        })
-    tool_def = {
-        "name": tool_name,
-        "description": tool_description,
-        "params": tool_params
-    }
-
-    print("[registered tool] " + pformat(tool_def))
-    _TOOL_HOOKS[tool_name] = func
-    _TOOL_DESCRIPTIONS[tool_name] = tool_def
-
-    return func
-
-def dispatch_tool(tool_name: str, tool_params: dict) -> str:
-    if tool_name not in _TOOL_HOOKS:
-        return f"Tool `{tool_name}` not found. Please use a provided tool."
-    tool_call = _TOOL_HOOKS[tool_name]
-    try:
-        ret = tool_call(**tool_params)  
-    except:
-        ret = traceback.format_exc()
-    return str(ret)
-
-def get_tools() -> dict:
-    return deepcopy(_TOOL_DESCRIPTIONS)
-
-# Tool Definitions
-@register_tool
 def Music_Recommender(
-    music_number: Annotated[int, '推荐数量（阿拉伯数字）', True] = 8,
-    music_name: Annotated[str, '歌曲名（海阔天空，同桌的你等）', False] = None,
-    artist_name: Annotated[str, '歌手名（周杰伦，刘若英等）', False]= None,
-    language: Annotated[str, '歌曲语种（粤语，英语，德语，华语等）', False]= None,
-    genre: Annotated[str, '歌曲风格（流行，摇滚，R&B，布鲁斯，电子等）', False]= None,
-    scene: Annotated[str, '歌曲适用场景（清晨，夜晚，运动，学习，工作等）', False]= None,
-    motion: Annotated[str, '歌曲情感（怀旧，浪漫，放松，伤感，快乐等）', False]= None,
-    music_instrument: Annotated[str, '歌曲主要乐器（钢琴，大提琴，小提琴，吉他等）', False]= None,
-    other: Annotated[str, '其他关键词（某榜单，某综艺，某游戏，某电影等）', False]= None,
+    music_number,
+    music_name,
+    artist_name,
+    language,
+    genre,
+    scene,
+    motion,
+    music_instrument,
+    query,
+    other,
 ) -> str:
     """
     Useful for recommending a list of musics that meets the user's needs。
     """
+    result = ""
     art = 'ar'
+    songs = []
     if music_name or artist_name:
         para = ""
         if music_name:
@@ -93,9 +109,11 @@ def Music_Recommender(
             para += artist_name
         r = requests.get(r"http://localhost:3000/search?keywords=" + para)
         songs = r.json()['result']['songs']
-        art = 'artists'
+        art = 'artists'   
     else:
         para = ""
+        if music_instrument:
+            para += music_instrument + " "
         if language:
             para += language + " "
         if genre:
@@ -104,36 +122,68 @@ def Music_Recommender(
             para += scene + " "
         if motion:
             para += motion + " "
-        if music_instrument:
-            para += music_instrument + " "
         if other:
             para += other + " "
-        r = requests.get(r"http://localhost:3000/search?keywords=" + para + r"&type=1000")
-        playlists = r.json()['result']['playlists']
-        r = requests.get(r"http://localhost:3000/playlist/track/all?id=" + str(playlists[0]['id']) + "&limit=50&offset=1")
-        songs = r.json()['songs']
-    result = ""
-    for song in songs[:min(len(songs),2*music_number)]:
-        result += song["name"] + "  歌手：" + ",".join([artist['name'] for artist in song[art]]) + r"  歌曲链接：https://music.163.com/#/song?id=" + str(song['id']) + '\n'
-    print (result)
+        if para:
+            r = requests.get(r"http://localhost:3000/search?keywords=" + para + r"&type=1000")
+            playlists = r.json()['result']['playlists']
+            r = requests.get(r"http://localhost:3000/playlist/track/all?id=" + str(playlists[0]['id']) + "&limit=50&offset=1")
+            songs = r.json()['songs']
+    if query:
+        search = BingSearchAPIWrapper(k=50)
+        sresult = search.run(query).replace("<b>", "").replace("</b>", "")
+        if len(sresult) > 1950:
+            sresult = sresult[:1950]
+
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": "我从网络上搜索了一些资料，请你从下面的搜索结果中总结" + 
+                    query + "，如果能找到相关信息，告诉我这首歌的正确歌名（如果有，下同），正确作者，风格，乐器，语种，情感，和其他相关的信息，如果有不符合描述的地方请你解释：\n" + sresult,
+                }
+            ],
+            model="gpt-3.5-turbo-1106",
+        )
+        result += "下面是网络的搜索结果：\n" + chat_completion.choices[0].message.content + "\n"
+    if songs:
+        result += "下面是网易云的搜索结果：\n"
+        for i, song in enumerate(songs[:min(len(songs), 2 * music_number)]):
+            search = BingSearchAPIWrapper(k=50)
+            sresult = search.run(query).replace("<b>", "").replace("</b>", "")
+            if len(result) > 1950:
+                sresult = sresult[:1950]
+            query = song['name'] + " " + song[art][0]['name'] + "歌曲"
+            result += "歌曲" + str(i) + ": "+ song["name"] + "  歌手：" + ",".join([artist['name'] for artist in song[art]]) + " "
+            
+            r = requests.get(r"http://localhost:3000/search?keywords=" + para + r"&type=1000")
+            playlists = r.json()['result']['playlists']
+            r = requests.get(r"http://localhost:3000/playlist/track/all?id=" + str(playlists[0]['id']) + "&limit=50&offset=1")
+            songs = r.json()['songs']
+            result += "歌曲" + str(i) + ": "+ song["name"] + "  歌手：" + ",".join([artist['name'] for artist in song[art]]) + " "
     return result
 
-@register_tool
-def duckduckgo_search(
-    keywords: Annotated[str, '检索关键词', True] = None,
+
+
+def Online_Music_Searcher(
+   Search_text
 ) -> str:
     """
-    Use a search engine duckduckgo to search information
+    Useful for recommending a list of musics that meets the user's needs。
     """
-    if not isinstance(keywords, str):
-        raise TypeError("Keywords must be a string")
-    try:
-        ret = ddg(keywords, safesearch='Off', max_results=200)
-    except:
-        import traceback
-        ret = "Error encountered while searching on duckduckgo\n" + traceback.format_exc()
-    return str(ret)
+    search = BingSearchAPIWrapper(k=50)
+    sresult = search.run(Search_text).replace("<b>", "").replace("</b>", "")
+    if len(sresult) > 1950:
+        sresult = sresult[:1950]
 
-if __name__ == "__main__":
-    print(dispatch_tool("Music_Recommender", {"language": "粤语"}))
-    print(get_tools())
+    chat_completion = client.chat.completions.create(
+        messages=[
+            {
+                "role": "user",
+                "content": "我从网络上搜索了一些资料，请你从下面的搜索结果中总结我的问题：" + 
+                Search_text + "，如果能找到相关信息，告诉我这首歌的正确歌名（如果有，下同），正确作者，风格，乐器，语种，情感，和其他相关的信息，如果有不符合描述的地方请你解释：\n" + sresult,
+            }
+        ],
+        model="gpt-3.5-turbo-1106",
+    )
+    return chat_completion.choices[0].message.content
