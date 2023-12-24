@@ -52,6 +52,7 @@ class Role(Enum):
 class Conversation:
     role: Role
     content: str
+    audio: str | None = None
     tool: str | None = None
     image: Image | None = None
 
@@ -85,6 +86,8 @@ class Conversation:
             message = self.role.get_message()
         if self.image:
             message.image(self.image)
+        elif self.audio:
+            message.audio(self.audio)
         else:
             text = self.get_text()
             message.markdown(text)

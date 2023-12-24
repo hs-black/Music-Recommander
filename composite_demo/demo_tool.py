@@ -1,18 +1,25 @@
 import json
-import re
-import time
-import yaml
-from yaml import YAMLError
+import requests
 
 import streamlit as st
 from streamlit.delta_generator import DeltaGenerator
 
-from client import get_client
-from conversation import postprocess_text, preprocess_text, Conversation, Role
-from tool_registry import tools, Music_Recommender, client, Online_Music_Searcher
+from conversation import Conversation, Role
+from tool_registry import tools, Music_Recommender, client
 
 MAX_LENGTH = 8192
 TRUNCATE_LENGTH = 1024
+
+def MusicPlay(MusicName, ArtistName):
+    print(MusicName, ArtistName)
+    
+    r = requests.get(f"http://localhost:3000/search?keywords={MusicName} {ArtistName}")
+    tid = r.json()['result']['songs'][0]['id']
+    print (tid)
+    r = requests.get(f"http://localhost:3000/song/url/v1?id={tid}&level=exhigh")
+    url = r.json()['data'][0]['url']
+    print (url)
+    return url
 
 # Append a conversation into history, while show it in a new markdown block
 def append_conversation(
@@ -23,12 +30,12 @@ def append_conversation(
     history.append(conversation)
     conversation.show(placeholder)
 
-def main(top_p: float, temperature: float, prompt_text: str):
+def main(top_p: float, temperature: float, choose, prompt_text: str):
     
     if 'tool_history' not in st.session_state:
         st.session_state.tool_history = []
     if 'messages' not in st.session_state:
-        st.session_state.messages = [{"role": "system", "content": "You are smart music AI Assistant. You can find musics that users want."}]
+        st.session_state.messages = [{"role": "system", "content": "You are smart music AI Assistant. You can find musics that users want. 并给出推荐和介绍"}]
 
     history: list[Conversation] = st.session_state.tool_history
     messages: list[dict] = st.session_state.messages
@@ -50,8 +57,10 @@ def main(top_p: float, temperature: float, prompt_text: str):
                 response = client.chat.completions.create(
                     model="gpt-3.5-turbo-1106",
                     messages=messages,
-                    tools=tools,
+                    tools=[tools[0]],
                     tool_choice="auto",  # auto is default, but we'll be explicit
+                    temperature=temperature,
+                    top_p=top_p
                 )
 
 
@@ -65,7 +74,7 @@ def main(top_p: float, temperature: float, prompt_text: str):
                 with st.spinner(f'Calling tools ...'):
                     available_functions = {
                         "Music_Recommender": Music_Recommender,
-                        # "Online_Music_Searcher": Online_Music_Searcher,
+                        "MusicPlay": MusicPlay,
                     }  # only one function in this example, but you can have multiple
                     messages.append(response_message)  # extend conversation with assistant's reply
                     # Step 4: send the info for each function call and function response to the model
@@ -86,10 +95,7 @@ def main(top_p: float, temperature: float, prompt_text: str):
                                 music_instrument = function_args.get("music_instrument", None),
                                 query = function_args.get("query", ""),
                                 other = function_args.get("other", None),
-                            )
-                        elif function_name == "Online_Music_Searcher":
-                            function_response = function_to_call(
-                                Search_text = function_args.get("Search_text", "")
+                                choose = choose
                             )
 
                         messages.append(
@@ -100,10 +106,26 @@ def main(top_p: float, temperature: float, prompt_text: str):
                                 "content": function_response,
                             }
                         )  # extend conversation with function response
-                        response_message = client.chat.completions.create(
-                                model="gpt-3.5-turbo-1106",
-                                messages=messages,
-                            ).choices[0].message
+                    response_message = client.chat.completions.create(
+                            model="gpt-3.5-turbo-1106",
+                            messages=messages,
+                            temperature=temperature,
+                            top_p=top_p
+                        ).choices[0].message
+                    PlayAudio = client.chat.completions.create(
+                            model="gpt-3.5-turbo-1106",
+                            messages=[
+                                {"role": "system", "content": "You are AI Audio Player, 从用户的输入中找到音乐的名字和歌手的名字，并调用工具 MusicPlay 来生成播放按钮"},
+                                {"role": "user", "content": response_message.content}
+                                ],
+                            tools=[tools[1]],
+                            tool_choice='auto',
+                            temperature=temperature,
+                            top_p=top_p
+                        ).choices[0].message
+                     
+                    print(response_message)
+
         messages.append(
                             {
                                 "role": "assistant",
@@ -114,3 +136,22 @@ def main(top_p: float, temperature: float, prompt_text: str):
                                 Role.ASSISTANT,
                                 response_message.content,
                             ), history, markdown_placeholder)
+        tool_calls = PlayAudio.tool_calls
+        if tool_calls:
+            for tool_call in tool_calls:
+                function_name = tool_call.function.name
+                function_to_call = available_functions[function_name]
+                function_args = json.loads(tool_call.function.arguments)
+                if function_name == "MusicPlay":
+                    placeholder = st.container()
+                    message_placeholder = placeholder.chat_message(name="assistant", avatar="assistant")
+                    markdown_placeholder = message_placeholder.empty()
+                    function_response = function_to_call(
+                        MusicName = function_args.get("MusicName", "杀死那个石家庄人"),
+                        ArtistName = function_args.get("ArtistName", "万能青年旅店"),
+                    )
+                    append_conversation(Conversation(
+                                            Role.ASSISTANT,
+                                            response_message.content,
+                                            function_response
+                                        ), history, markdown_placeholder)

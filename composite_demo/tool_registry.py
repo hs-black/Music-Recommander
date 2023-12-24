@@ -3,7 +3,7 @@ from openai import OpenAI
 from langchain.utilities import BingSearchAPIWrapper
 import requests
 
-os.environ["OPENAI_API_KEY"] = "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"
+os.environ["OPENAI_API_KEY"] = "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"
 os.environ["BING_SUBSCRIPTION_KEY"] = "a24d675d518c4e0a9707ab9d34d75ea2"
 os.environ["BING_SEARCH_URL"] = "https://api.bing.microsoft.com/v7.0/search"
 client = OpenAI()
@@ -61,27 +61,68 @@ tools = [
                     "required": ["music_number", "query"],
                 },
             },
-        }
+        },
 
-        # {
-        #     "type": "function",
-        #     "function": {
-        #         "name": "Online_Music_Searcher",
-        #         "description": "从网络上获取信息，直接搜索给定的信息",
-        #         "parameters": {
-        #             "type": "object",
-        #             "properties": {
-        #                 "Search_text": {
-        #                     "type": "string",
-        #                     "description": "需要搜索的信息，直接从网络搜索这个文本，比如“鸡你太美是什么歌？”，“歌词包含“就这样被你征服”，那英的，是什么歌”",
-        #                 },
-        #             },
-        #             "required": [],
-        #         },
-        #     },
-        # }
+        {
+            "type": "function",
+            "function": {
+                "name": "MusicPlay",
+                "description": "根据音乐的名称和歌手名，找到歌曲链接并播放",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "MusicName": {
+                            "type": "string",
+                            "description": "歌曲名",
+                        },
+                        "ArtistName": {
+                            "type": "string",
+                            "description": "歌手名",
+                        },
+                    },
+                    "required": ["MusicName", "ArtistName"],
+                },
+            },
+        }
     ]
 
+
+def getInfo(tid: int) -> str :
+    result = ""
+    r = requests.get(f"http://localhost:3000/song/wiki/summary?id={tid}").json()
+    print (tid, f"http://localhost:3000/song/wiki/summary?id={tid}")
+    blocks = r['data']['blocks'][1]['creatives']
+    for label in blocks:
+        tag = label["creativeType"]
+        if tag == 'songTag':
+            result += "曲风: "
+            for melody in label['resources']:
+                result += melody['uiElement']['mainTitle']['title'] + " "
+        if tag == 'songBizTag':
+            result += "推荐标签: "
+            for melody in label['resources']:
+                result += melody['uiElement']['mainTitle']['title'] + " "
+        if tag == 'language':
+            result += "语言: "
+            for melody in label['uiElement']['textLinks']:
+                result += melody['text'] + " "
+
+        if tag == 'BPM':
+            result += "BPM: "
+            for melody in label['uiElement']['textLinks']:
+                result += melody['text'] + " "
+
+        if tag == 'songAward':
+            result += "获奖情况: "
+            for melody in label['resources']:
+                result += melody['uiElement']['subTitles'][0]['title'] + melody['uiElement']['mainTitle']['title'] + melody['uiElement']['subTitles'][1]['title'] + ' '
+                
+        if tag == 'songComment':
+            result += "乐评: "
+            for melody in label['resources']:
+                for desc in melody['uiElement']['descriptions']:
+                    result += desc['description'] + ' '
+    return result
 
 def Music_Recommender(
     music_number,
@@ -94,6 +135,7 @@ def Music_Recommender(
     music_instrument,
     query,
     other,
+    choose
 ) -> str:
     """
     Useful for recommending a list of musics that meets the user's needs。
@@ -108,7 +150,7 @@ def Music_Recommender(
         if artist_name:
             para += artist_name
         r = requests.get(r"http://localhost:3000/search?keywords=" + para)
-        songs = r.json()['result']['songs']
+        songs += r.json()['result']['songs']
         art = 'artists'   
     else:
         para = ""
@@ -125,10 +167,21 @@ def Music_Recommender(
         if other:
             para += other + " "
         if para:
+            import random
             r = requests.get(r"http://localhost:3000/search?keywords=" + para + r"&type=1000")
             playlists = r.json()['result']['playlists']
-            r = requests.get(r"http://localhost:3000/playlist/track/all?id=" + str(playlists[0]['id']) + "&limit=50&offset=1")
-            songs = r.json()['songs']
+            tmpsongs = []
+            r = requests.get(r"http://localhost:3000/playlist/track/all?id=" + str(playlists[0]['id']) + "&limit=8&offset=1")
+            print (playlists[0]['name'])
+            print (playlists[1]['name'])
+            print (playlists[2]['name'])
+            tmpsongs += r.json()['songs']
+            r = requests.get(r"http://localhost:3000/playlist/track/all?id=" + str(playlists[1]['id']) + "&limit=3&offset=1")
+            tmpsongs += r.json()['songs']
+            r = requests.get(r"http://localhost:3000/playlist/track/all?id=" + str(playlists[2]['id']) + "&limit=2&offset=1")
+            tmpsongs += r.json()['songs']
+            random.shuffle(tmpsongs)
+            songs += tmpsongs
     if query:
         search = BingSearchAPIWrapper(k=50)
         sresult = search.run(query).replace("<b>", "").replace("</b>", "")
@@ -146,21 +199,12 @@ def Music_Recommender(
             model="gpt-3.5-turbo-1106",
         )
         result += "下面是网络的搜索结果：\n" + chat_completion.choices[0].message.content + "\n"
-    if songs:
+    if len(songs):
         result += "下面是网易云的搜索结果：\n"
-        for i, song in enumerate(songs[:min(len(songs), 2 * music_number)]):
-            search = BingSearchAPIWrapper(k=50)
-            sresult = search.run(query).replace("<b>", "").replace("</b>", "")
-            if len(result) > 1950:
-                sresult = sresult[:1950]
+        for i, song in enumerate(songs[:min(len(songs), int(choose))]):
             query = song['name'] + " " + song[art][0]['name'] + "歌曲"
-            result += "歌曲" + str(i) + ": "+ song["name"] + "  歌手：" + ",".join([artist['name'] for artist in song[art]]) + " "
-            
-            r = requests.get(r"http://localhost:3000/search?keywords=" + para + r"&type=1000")
-            playlists = r.json()['result']['playlists']
-            r = requests.get(r"http://localhost:3000/playlist/track/all?id=" + str(playlists[0]['id']) + "&limit=50&offset=1")
-            songs = r.json()['songs']
-            result += "歌曲" + str(i) + ": "+ song["name"] + "  歌手：" + ",".join([artist['name'] for artist in song[art]]) + " "
+            result += "歌曲名称" + str(i) + ": "+ song["name"] + "  歌手：" + ",".join([artist['name'] for artist in song[art]]) + " " + getInfo(song['id']) + '\n'
+    print (result)
     return result
 
 

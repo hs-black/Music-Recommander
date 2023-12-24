@@ -15,7 +15,10 @@ with st.sidebar:
         'top_p', 0.0, 1.0, 0.8, step=0.01
     )
     temperature = st.slider(
-        'temperature', 0.0, 1.5, 0.95, step=0.01
+        'temperature', 0.0, 1.5, 0.25, step=0.01
+    )
+    choose = st.slider(
+        'choose', 1, 30, 20, step=1
     )
 
 st.title("ChatGLM3 Music Recommender")
@@ -25,4 +28,4 @@ prompt_text = st.chat_input(
     key='chat_input',
 )
 
-demo_tool.main(top_p, temperature, prompt_text)
+demo_tool.main(top_p, temperature, choose, prompt_text)
