@@ -57,6 +57,9 @@ def main(top_p: float, temperature: float, choose, prompt_text: str):
         markdown_placeholder = message_placeholder.empty()
 
         messages.append({"role": "user", "content": prompt_text})
+
+        print(messages)
+        #print(messages)
         with markdown_placeholder:
             with st.spinner(f'Generating Text ...'):
                 response = client.chat.completions.create(
@@ -111,13 +114,15 @@ def main(top_p: float, temperature: float, choose, prompt_text: str):
                                 "content": function_response,
                             }
                         )  # extend conversation with function response
+
+                    print("M", messages)
                     response_message = client.chat.completions.create(
                             model="gpt-3.5-turbo-1106",
                             messages=messages,
                             temperature=temperature,
                             top_p=top_p
                         ).choices[0].message
-                    
+                    print("R", response_message)
                     PlayAudio = client.chat.completions.create(
                             model="gpt-3.5-turbo-1106",
                             messages=[

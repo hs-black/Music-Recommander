@@ -8,7 +8,7 @@ proxies = {
   "https": None,
 }
 
-os.environ["OPENAI_API_KEY"] = "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"
+os.environ["OPENAI_API_KEY"] = "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"
 os.environ["BING_SUBSCRIPTION_KEY"] = "a24d675d518c4e0a9707ab9d34d75ea2"
 os.environ["BING_SEARCH_URL"] = "https://api.bing.microsoft.com/v7.0/search"
 client = OpenAI()
@@ -180,14 +180,18 @@ def Music_Recommender(
             playlists = r.json()['result']['playlists']
             tmpsongs = []
             r = requests.get(r"http://localhost:3000/playlist/track/all?id=" + str(playlists[0]['id']) + "&limit=8&offset=1", proxies = proxies)
-            print (playlists[0]['name'])
-            print (playlists[1]['name'])
-            print (playlists[2]['name'])
-            tmpsongs += r.json()['songs']
+            print (playlists[0]['id'])
+            print (playlists[1]['id'])
+            print (playlists[2]['id'])
+            print (r.json())
+            if r.json()['code'] == 200:
+                tmpsongs += r.json()['songs']
             r = requests.get(r"http://localhost:3000/playlist/track/all?id=" + str(playlists[1]['id']) + "&limit=3&offset=1", proxies = proxies)
-            tmpsongs += r.json()['songs']
+            if r.json()['code'] == 200:
+                tmpsongs += r.json()['songs']
             r = requests.get(r"http://localhost:3000/playlist/track/all?id=" + str(playlists[2]['id']) + "&limit=2&offset=1", proxies = proxies)
-            tmpsongs += r.json()['songs']
+            if r.json()['code'] == 200:
+                tmpsongs += r.json()['songs']
             random.shuffle(tmpsongs)
             songs += tmpsongs
     if query:

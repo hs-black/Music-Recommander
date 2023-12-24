@@ -1,0 +1,115 @@
+{
+    "messages": [
+        {'role': 'system', 'content': 'You are smart music AI Assistant. You can find musics that users want. 并给出推荐和介绍'},
+        {'role': 'user', 'content': '推荐一首SHE的歌曲'},
+        {"role": "assistant", "function_call": {"name": "Music_Recommender", "arguments": "{\"music_number\":1,\"artist_name\":\"SHE\"}"}}
+    ],
+    "functions": [{
+        "name": "Music_Recommender",
+        "description": "Useful for recommending a list of musics that meets the user's needs",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "music_number": {
+                    "type": "number",
+                    "description": "推荐数量（阿拉伯数字）",
+                },
+                "music_name": {
+                    "type": "string",
+                    "description": "歌曲名（海阔天空，同桌的你等）",
+                },
+                "artist_name": {
+                    "type": "string",
+                    "description": "歌手名（周杰伦，刘若英等）",
+                },
+                "language": {
+                    "type": "string",
+                    "description": "歌曲语种（粤语，英语，德语，华语等）",
+                },
+                "genre": {
+                    "type": "string",
+                    "description": "歌曲风格（流行，摇滚，R&B，布鲁斯，电子等）",
+                },
+                "scene": {
+                    "type": "string",
+                    "description": "歌曲适用场景（清晨，夜晚，运动，学习，工作等）",
+                },
+                "motion": {
+                    "type": "string",
+                    "description": "歌曲情感（怀旧，浪漫，放松，伤感，快乐等）",
+                },
+                "music_instrument": {
+                    "type": "string",
+                    "description": "歌曲主要乐器（钢琴，大提琴，小提琴，吉他等）",
+                },
+                "query": {
+                    "type": "string",
+                    "description": "需要搜索的信息，直接从网络搜索这个文本，比如'鸡你太美是什么歌?','歌词包含就这样被你征服，是什么歌'",
+                },
+                "other": {
+                    "type": "string",
+                    "description": "其他关键词（某榜单，某综艺，某游戏，某电影等）",
+                },
+            },
+            "required": ["music_number", "query"],
+        },
+    }]
+}
+{
+    "messages": [
+        {'role': 'system', 'content': 'You are smart music AI Assistant. You can find musics that users want. 并给出推荐和介绍'},
+        {'role': 'user', 'content': '推荐两首陈奕迅的粤语歌曲, 要伤感的'},
+        {"role": "assistant", "function_call": {"name": "Music_Recommender", "arguments": "{\"music_number\":2,\"artist_name\":\"陈奕迅\", \"motion\":\"伤感\", }"}}
+    ],
+    "functions": [{
+        "name": "Music_Recommender",
+        "description": "Useful for recommending a list of musics that meets the user's needs",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "music_number": {
+                    "type": "number",
+                    "description": "推荐数量（阿拉伯数字）",
+                },
+                "music_name": {
+                    "type": "string",
+                    "description": "歌曲名（海阔天空，同桌的你等）",
+                },
+                "artist_name": {
+                    "type": "string",
+                    "description": "歌手名（周杰伦，刘若英等）",
+                },
+                "language": {
+                    "type": "string",
+                    "description": "歌曲语种（粤语，英语，德语，华语等）",
+                },
+                "genre": {
+                    "type": "string",
+                    "description": "歌曲风格（流行，摇滚，R&B，布鲁斯，电子等）",
+                },
+                "scene": {
+                    "type": "string",
+                    "description": "歌曲适用场景（清晨，夜晚，运动，学习，工作等）",
+                },
+                "motion": {
+                    "type": "string",
+                    "description": "歌曲情感（怀旧，浪漫，放松，伤感，快乐等）",
+                },
+                "music_instrument": {
+                    "type": "string",
+                    "description": "歌曲主要乐器（钢琴，大提琴，小提琴，吉他等）",
+                },
+                "query": {
+                    "type": "string",
+                    "description": "需要搜索的信息，直接从网络搜索这个文本，比如'鸡你太美是什么歌?','歌词包含就这样被你征服，是什么歌'",
+                },
+                "other": {
+                    "type": "string",
+                    "description": "其他关键词（某榜单，某综艺，某游戏，某电影等）",
+                },
+            },
+            "required": ["music_number", "query"],
+        },
+    }]
+}
+
