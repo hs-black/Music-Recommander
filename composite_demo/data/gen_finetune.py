@@ -42,7 +42,7 @@ for filename in os.listdir(directory_path):
                 if lang:
                     
                     data = copy.deepcopy(base)
-                    data["messages"][1]["content"] = "歌曲" + name + "的语种是谁?"
+                    data["messages"][1]["content"] = "歌曲" + name + "的语种是什么?"
                     data["messages"][2]["content"] = lang
                     dataset.append(data)
                 
