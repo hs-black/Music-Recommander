@@ -59,7 +59,6 @@ def main(top_p: float, temperature: float, choose, prompt_text: str):
         messages.append({"role": "user", "content": prompt_text})
 
         print(messages)
-        #print(messages)
         with markdown_placeholder:
             with st.spinner(f'Generating Text ...'):
                 response = client.chat.completions.create(

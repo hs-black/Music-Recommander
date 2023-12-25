@@ -95,7 +95,7 @@ tools = [
 def getInfo(tid: int) -> str :
     result = ""
     r = requests.get(f"http://localhost:3000/song/wiki/summary?id={tid}",proxies = proxies).json()
-    print (tid, f"http://localhost:3000/song/wiki/summary?id={tid}")
+    # print (tid, f"http://localhost:3000/song/wiki/summary?id={tid}")
     blocks = r['data']['blocks'][1]['creatives']
     for label in blocks:
         tag = label["creativeType"]
@@ -155,8 +155,8 @@ def Music_Recommender(
         if artist_name:
             para += artist_name
         r = requests.get(r"http://localhost:3000/search?keywords=" + para, proxies = proxies)
-        print("para", para)
-        print("TESTTT", r)
+        # print("para", para)
+        # print("TESTTT", r)
 
         songs += r.json()['result']['songs']
         art = 'artists'   
@@ -180,10 +180,10 @@ def Music_Recommender(
             playlists = r.json()['result']['playlists']
             tmpsongs = []
             r = requests.get(r"http://localhost:3000/playlist/track/all?id=" + str(playlists[0]['id']) + "&limit=8&offset=1", proxies = proxies)
-            print (playlists[0]['id'])
-            print (playlists[1]['id'])
-            print (playlists[2]['id'])
-            print (r.json())
+            # print (playlists[0]['id'])
+            # print (playlists[1]['id'])
+            # print (playlists[2]['id'])
+            # print (r.json())
             if r.json()['code'] == 200:
                 tmpsongs += r.json()['songs']
             r = requests.get(r"http://localhost:3000/playlist/track/all?id=" + str(playlists[1]['id']) + "&limit=3&offset=1", proxies = proxies)
@@ -216,7 +216,7 @@ def Music_Recommender(
         for i, song in enumerate(songs[:min(len(songs), int(choose))]):
             query = song['name'] + " " + song[art][0]['name'] + "歌曲"
             result += "歌曲名称" + str(i) + ": "+ song["name"] + "  歌手：" + ",".join([artist['name'] for artist in song[art]]) + " " + getInfo(song['id']) + '\n'
-    print (result)
+    # print (result)
     return result
 
 

@@ -1,4 +1,3 @@
-
 import os
 
 os.environ["BING_SUBSCRIPTION_KEY"] = "key"
