@@ -1,7 +1,14 @@
 import os, json
 from openai import OpenAI
 from langchain.utilities import BingSearchAPIWrapper
+from duckduckgo_search import DDGS
 import requests
+import sys
+sys.path.append('/home/zsu/Music-Recommander/composite_demo/Langchain_Chatchat')
+from webui_pages.utils import *
+from server.utils import api_address
+
+api = ApiRequest(base_url=api_address())
 
 proxies = {
   "http": None,
@@ -9,7 +16,7 @@ proxies = {
 }
 
 os.environ["OPENAI_API_KEY"] = "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"
-os.environ["BING_SUBSCRIPTION_KEY"] = "a24d675d518c4e0a9707ab9d34d75ea2"
+os.environ["BING_SUBSCRIPTION_KEY"] = "d7a75d130c9a4e61b18b554c096cb289"
 os.environ["BING_SEARCH_URL"] = "https://api.bing.microsoft.com/v7.0/search"
 client = OpenAI()
 
@@ -18,7 +25,7 @@ tools = [
             "type": "function",
             "function": {
                 "name": "Music_Recommender",
-                "description": "Useful for recommending a list of musics that meets the user's needs",
+                "description": "Useful for recommending a list of musics that meets the user's needs and searching for the information of the music.",
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -129,6 +136,23 @@ def getInfo(tid: int) -> str :
                     result += desc['description'] + ' '
     return result
 
+def get_kb_response(prompt):
+    text = ""
+    for d in api.knowledge_base_chat(prompt,
+                                    knowledge_base_name="music_new",
+                                    top_k=3,
+                                    score_threshold=1.0,
+                                    history=[],
+                                    model="chatglm3-6b",
+                                    prompt_name="default",
+                                    temperature=0.7):
+        if error_msg := check_error_msg(d):
+            return ""
+        elif chunk := d.get("answer"):
+            text += chunk
+    return text
+
+
 def Music_Recommender(
     music_number,
     music_name,
@@ -140,7 +164,8 @@ def Music_Recommender(
     music_instrument,
     query,
     other,
-    choose
+    choose,
+    prompt
 ) -> str:
     """
     Useful for recommending a list of musics that meets the user's needs。
@@ -216,7 +241,12 @@ def Music_Recommender(
         for i, song in enumerate(songs[:min(len(songs), int(choose))]):
             query = song['name'] + " " + song[art][0]['name'] + "歌曲"
             result += "歌曲名称" + str(i) + ": "+ song["name"] + "  歌手：" + ",".join([artist['name'] for artist in song[art]]) + " " + getInfo(song['id']) + '\n'
-    # print (result)
+    kb_response = get_kb_response(prompt)
+    print("kb_response", kb_response)
+    if len(kb_response):
+        result += "下面是本地知识库搜索结果：\n"
+        result += kb_response
+    print (result)
     return result
 
 

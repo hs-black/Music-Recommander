@@ -102,7 +102,8 @@ def main(top_p: float, temperature: float, choose, prompt_text: str):
                                 music_instrument = function_args.get("music_instrument", None),
                                 query = function_args.get("query", ""),
                                 other = function_args.get("other", None),
-                                choose = choose
+                                choose = choose,
+                                prompt = prompt_text
                             )
 
                         messages.append(

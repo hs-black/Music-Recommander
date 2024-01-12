@@ -9,3 +9,5 @@ AdvertiseGen/
 *.gz
 *.idea
 .ipynb_checkpoints/
+*log*
+composite_demo/Langchain_Chatchat/models/
