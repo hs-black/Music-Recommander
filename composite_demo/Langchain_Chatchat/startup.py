@@ -465,37 +465,13 @@ def run_webui(started_event: mp.Event = None, run_mode: str = None):
     started_event.set()
     p.wait()
 
-def run_webui_music(started_event: mp.Event = None, run_mode: str = None):
-    from server.utils import set_httpx_config
-    set_httpx_config()
-
-    host = WEBUI_MUSIC_SERVER["host"]
-    port = WEBUI_MUSIC_SERVER["port"]
-
-    cmd = ["streamlit", "run", "webui_music.py",
-            "--server.address", host,
-            "--server.port", str(port),
-            "--theme.base", "light",
-            "--theme.primaryColor", "#165dff",
-            "--theme.secondaryBackgroundColor", "#f5f5f5",
-            "--theme.textColor", "#000000",
-        ]
-    if run_mode == "lite":
-        cmd += [
-            "--",
-            "lite",
-        ]
-    p = subprocess.Popen(cmd)
-    started_event.set()
-    p.wait()
-
 def parse_args() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-a",
         "--all-webui",
         action="store_true",
-        help="run fastchat's controller/openai_api/model_worker servers, run api.py, webui.py and webui_music.py",
+        help="run fastchat's controller/openai_api/model_worker servers, run api.py, webui.py",
         dest="all_webui",
     )
     parser.add_argument(
