@@ -388,6 +388,7 @@ def dialogue_page(api: ApiRequest, is_lite: bool = False):
                 chat_box.update_msg(text, element_index=0, streaming=False)
                 print("text", text)
                 chat_box.update_msg("\n\n".join(d.get("docs", [])), element_index=1, streaming=False)
+                print("raw", [d.get("docs", [])[i].split("\n\n")[1] for i in range(len(d.get("docs", [])))])
             elif dialogue_mode == "文件对话":
                 if st.session_state["file_chat_id"] is None:
                     st.error("请先上传文件再进行对话")

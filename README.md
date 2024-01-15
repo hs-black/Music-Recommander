@@ -33,7 +33,7 @@ $ npm install
 ```
 
 ### 2.模型下载
-本项目的本地数据库部分使用 LLM 模型 [THUDM/ChatGLM3-6B](https://huggingface.co/THUDM/chatglm3-6b) 与 Embedding 模型 [BAAI/bge-large-zh](https://huggingface.co/BAAI/bge-large-zh)。
+本项目的本地知识库部分使用 LLM 模型 [THUDM/ChatGLM3-6B](https://huggingface.co/THUDM/chatglm3-6b) 与 Embedding 模型 [BAAI/bge-large-zh](https://huggingface.co/BAAI/bge-large-zh)。
 
 下载模型需要先[安装 Git LFS](https://docs.github.com/zh/repositories/working-with-files/managing-large-files/installing-git-large-file-storage)，然后在 composite_demo/Langchain_Chatchat 下运行
 
@@ -45,7 +45,16 @@ $ git clone https://huggingface.co/THUDM/chatglm3-6b
 $ git clone https://huggingface.co/BAAI/bge-large-zh
 ```
 
-### 3.启动项目
+
+### 3.依据本地文档构建向量库
+本地知识库需要依据文档构建本地向量库，这可能会花费较长时间
+
+```shell
+# 在 composite_demo/Langchain_Chatchat 下运行
+$ python init_database.py --recreate-vs
+```
+
+### 4.启动项目
 
 按照以下命令依次启动各个子项目
 
@@ -53,7 +62,7 @@ $ git clone https://huggingface.co/BAAI/bge-large-zh
 # 启动 NeteaseCloudMusicApi, 在 NeteaseCloudMusicApi 目录下运行
 $ node app.js
 
-# 启动本地数据库, 在 composite_demo/Langchain_Chatchat 目录下运行
+# 启动本地知识库, 在 composite_demo/Langchain_Chatchat 目录下运行
 $ python startup.py -a
 
 # 启动聊天界面, 在 composite_demo 目录下运行

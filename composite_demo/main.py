@@ -20,6 +20,10 @@ with st.sidebar:
     choose = st.slider(
         'choose', 1, 30, 20, step=1
     )
+    model = st.selectbox(
+        'model',
+        ['Music Recommender (full)', 'GPT', 'Music Recommender (without local knowledge base)', 'ChatGLM3 + local knowledge base', ]
+    )
 
 st.title("ChatGLM3 Music Recommender")
 
@@ -28,4 +32,4 @@ prompt_text = st.chat_input(
     key='chat_input',
 )
 
-demo_tool.main(top_p, temperature, choose, prompt_text)
+demo_tool.main(top_p, temperature, choose, prompt_text, model)
