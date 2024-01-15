@@ -1,6 +1,6 @@
 import json
 import requests
-import sys
+import sys, os
 import streamlit as st
 from streamlit.delta_generator import DeltaGenerator
 
@@ -9,7 +9,7 @@ proxies = {
   "https": None,
 }
 
-sys.path.append('/home/zsu/Music-Recommander/composite_demo/Langchain_Chatchat')
+sys.path.append(os.path.split(os.path.realpath(__file__))[0] + '/Langchain_Chatchat')
 from webui_pages.utils import *
 
 from conversation import Conversation, Role

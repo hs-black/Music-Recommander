@@ -4,7 +4,7 @@ from langchain.utilities import BingSearchAPIWrapper
 from duckduckgo_search import DDGS
 import requests
 import sys
-sys.path.append('/home/zsu/Music-Recommander/composite_demo/Langchain_Chatchat')
+sys.path.append(os.path.split(os.path.realpath(__file__))[0] + '/Langchain_Chatchat')
 from webui_pages.utils import *
 from server.utils import api_address
 
@@ -95,6 +95,24 @@ tools = [
                     "required": ["MusicName", "ArtistName"],
                 },
             },
+        },
+
+        {
+            "type": "function",
+            "function": {
+                "name": "Online_Music_Searcher",
+                "description": "Useful for searching for the information of the music.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "Search_text": {
+                            "type": "string",
+                            "description": "需要搜索的歌曲信息，直接从网络搜索这个文本，比如'鸡你太美是什么歌?','歌词包含就这样被你征服，是什么歌'",
+                        },
+                    },
+                    "required": ["Search_text"],
+                },
+            },
         }
     ]
 
@@ -148,8 +166,11 @@ def get_kb_response(prompt):
                                     temperature=0.7):
         if error_msg := check_error_msg(d):
             return ""
-        elif chunk := d.get("answer"):
-            text += chunk
+        # elif chunk := d.get("answer"):
+        #     text += chunk
+    for i in range(len(d.get("docs", []))):
+        text += '['+ str(i) + '] '
+        text += d.get("docs", [])[i].split("\n\n")[1] + '\n\n'
     return text
 
 
@@ -241,12 +262,13 @@ def Music_Recommender(
         for i, song in enumerate(songs[:min(len(songs), int(choose))]):
             query = song['name'] + " " + song[art][0]['name'] + "歌曲"
             result += "歌曲名称" + str(i) + ": "+ song["name"] + "  歌手：" + ",".join([artist['name'] for artist in song[art]]) + " " + getInfo(song['id']) + '\n'
-    kb_response = get_kb_response(prompt)
-    print("kb_response", kb_response)
-    if len(kb_response):
-        result += "下面是本地知识库搜索结果：\n"
-        result += kb_response
-    print (result)
+    if prompt:
+        kb_response = get_kb_response(prompt)
+        print("kb_response", kb_response)
+        if len(kb_response):
+            result += "下面是本地知识库搜索结果：\n"
+            result += kb_response
+        print (result)
     return result
 
 
@@ -272,4 +294,5 @@ def Online_Music_Searcher(
         ],
         model="gpt-3.5-turbo-1106",
     )
+    print("网络搜索结果", chat_completion.choices[0].message.content)
     return chat_completion.choices[0].message.content
