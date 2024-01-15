@@ -1,6 +1,6 @@
 import json
 import requests
-
+import sys
 import streamlit as st
 from streamlit.delta_generator import DeltaGenerator
 
@@ -8,6 +8,9 @@ proxies = {
   "http": None,
   "https": None,
 }
+
+sys.path.append('/home/zsu/Music-Recommander/composite_demo/Langchain_Chatchat')
+from webui_pages.utils import *
 
 from conversation import Conversation, Role
 from tool_registry import tools, Music_Recommender, client, Online_Music_Searcher
@@ -435,4 +438,53 @@ def main(top_p: float, temperature: float, choose, prompt_text: str, model: str)
                                             ), history, markdown_placeholder)
     
     elif model == 'ChatGLM3 + local knowledge base':
-        pass
+        from tool_registry import api
+        if 'tool_history' not in st.session_state:
+            st.session_state.tool_history = []
+        if 'messages' not in st.session_state:
+            st.session_state.messages = [{"role": "system", "content": "You are smart music AI Assistant. You can find musics that users want. 并给出推荐和介绍"}]
+
+        history: list[Conversation] = st.session_state.tool_history
+        messages: list[dict] = st.session_state.messages
+
+        for conversation in history:
+            conversation.show()
+
+        if prompt_text:
+            prompt_text = prompt_text.strip()
+            append_conversation(Conversation(Role.USER, prompt_text), history)
+            
+            placeholder = st.container()
+            message_placeholder = placeholder.chat_message(name="assistant", avatar="assistant")
+            markdown_placeholder = message_placeholder.empty()
+
+            messages.append({"role": "user", "content": prompt_text})
+
+            print(messages)
+            with markdown_placeholder:
+                with st.spinner(f'Generating Text ...'):
+                    text = ""
+                    for d in api.knowledge_base_chat(prompt_text,
+                                    knowledge_base_name="music_new",
+                                    top_k=3,
+                                    score_threshold=1.0,
+                                    history=messages,
+                                    model="chatglm3-6b",
+                                    prompt_name="default",
+                                    temperature=0.7):
+                        if error_msg := check_error_msg(d):
+                            return ""
+                        elif chunk := d.get("answer"):
+                            text += chunk
+
+            messages.append(
+                                {
+                                    "role": "assistant",
+                                    "content": text,
+                                }
+                            )
+            
+            append_conversation(Conversation(
+                                    Role.ASSISTANT,
+                                    text,
+                                ), history, markdown_placeholder)

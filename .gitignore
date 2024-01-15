@@ -11,3 +11,4 @@ AdvertiseGen/
 .ipynb_checkpoints/
 *log*
 composite_demo/Langchain_Chatchat/models/
+composite_demo/Langchain_Chatchat/knowledge_base/

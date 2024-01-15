@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-import os
+import os, sys
 from typing import Any, Protocol
 
 from huggingface_hub.inference._text_generation import TextGenerationStreamResponse, Token
@@ -12,7 +12,7 @@ from transformers import AutoModel, AutoTokenizer, AutoConfig
 from conversation import Conversation
 
 TOOL_PROMPT = 'Answer the following questions as best as you can. You have access to the following tools:'
-
+os.environ['MODEL_PATH'] = os.path.split(os.path.realpath(__file__))[0] + '/Langchain_Chatchat/models/chatglm3-6b'
 MODEL_PATH = os.environ.get('MODEL_PATH', 'THUDM/chatglm3-6b')
 PT_PATH = os.environ.get('PT_PATH', None)
 TOKENIZER_PATH = os.environ.get("TOKENIZER_PATH", MODEL_PATH)
