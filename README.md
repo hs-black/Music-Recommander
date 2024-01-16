@@ -1,8 +1,10 @@
-# 基于LLM的音乐推荐系统 (Music Recommender)
+# 基于 LLM 的音乐推荐系统 (Music Recommender)
 
 ## 介绍
 
-TODO
+这是一个基于 LLM 的音乐推荐系统，您可以与其对话，让其为您推荐歌曲。也可以与其进行歌曲方面的对话，比如问它“‘鸡你太美’是什么歌曲？”
+
+![image](./demo.png)
 
 ## 快速上手
 
