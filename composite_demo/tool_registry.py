@@ -261,11 +261,9 @@ def Music_Recommender(
             result += "歌曲名称" + str(i) + ": "+ song["name"] + "  歌手：" + ",".join([artist['name'] for artist in song[art]]) + " " + getInfo(song['id']) + '\n'
     if prompt:
         kb_response = get_kb_response(prompt)
-        print("kb_response", kb_response)
         if len(kb_response):
             result += "下面是本地知识库搜索结果：\n"
             result += kb_response
-        print (result)
     return result
 
 

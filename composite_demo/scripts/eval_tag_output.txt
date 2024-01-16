@@ -1,0 +1,9 @@
+======eval_tag======
+Our_Recommender_Full 0.91
+error_count Our_Recommender_Full 0
+GPT 0.67
+error_count GPT 0
+Our_Recommender_no_kb 0.74
+error_count Our_Recommender_no_kb 0
+ChatGLM_with_kb 0.95
+error_count ChatGLM_with_kb 0
